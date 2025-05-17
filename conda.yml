@@ -1,0 +1,27 @@
+name: qbx-direct-solver
+channels:
+- conda-forge
+- nodefaults
+dependencies:
+- colorama
+- compilers
+- cython
+- git
+- gmsh
+- immutables
+- islpy
+- mako
+- matplotlib-base
+- numpy
+- pip
+- pocl
+- pyopencl
+- pyrsistent
+- pytest
+- python-symengine
+- python=3.10
+- pytools
+- pyvkfft
+- recursivenodes
+- scipy
+- sympy
