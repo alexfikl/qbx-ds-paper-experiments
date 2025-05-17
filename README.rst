@@ -19,21 +19,6 @@ or, equivalently
 
     make docker-build
 
-Locked dependencies
--------------------
-
-This contains a list of hardcoded dependencies at the time of writing to
-ensure reproducible results. They can be found in
-
-* ``conda-packages.txt``: base system Conda dependencies.
-* ``requirements.txt``: additional Python dependencies.
-
-To update the versions to the latest ones, you can use
-
-.. code:: bash
-
-    make -B pin
-
 Reproducing results
 -------------------
 
@@ -56,3 +41,18 @@ You can of course also run the scripts individually by calling the respective
 file. The ``make run`` command will automatically run the experiments over 2D and
 3D and over a single-layer and double-layer potential to generate all the results
 from the paper.
+
+Locked dependencies
+-------------------
+
+This contains a list of hardcoded dependencies at the time of writing to
+ensure reproducible results. They can be found in
+
+* ``conda-packages.txt``: base system Conda dependencies.
+* ``requirements.txt``: additional Python dependencies.
+
+To update the versions to the latest ones, you can use
+
+.. code:: bash
+
+    make -B pin
