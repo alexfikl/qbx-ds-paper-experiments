@@ -1,4 +1,4 @@
-name: qbx-direct-solver
+name: qbx-ds-experiments
 channels:
 - conda-forge
 - nodefaults
