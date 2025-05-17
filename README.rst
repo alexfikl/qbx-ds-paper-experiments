@@ -11,7 +11,7 @@ To build the image, start your docker daemon and just do
 
 .. code:: bash
 
-    docker build -f Dockerfile . -t qbx-direct-solver
+    docker buildx build -f Dockerfile . -t qbx-ds-experiments
 
 or, equivalently
 
@@ -37,4 +37,22 @@ To update the versions to the latest ones, you can use
 Reproducing results
 -------------------
 
-TODO
+To run the scripts in the ``experiments`` folder you need to go trough the followin
+steps
+
+.. code:: bash
+
+    # enter the container that was built as above
+    make docker-run
+    # inside the containter:
+    source "${HOME}/.miniforge/bin/activate" paper
+    make run
+    make visualize
+
+The first command ``make run`` will run all the experiments and generate a set of
+``npz`` files with the results. These can then be visualized with ``make visualize``.
+
+You can of course also run the scripts individually by calling the respective
+file. The ``make run`` command will automatically run the experiments over 2D and
+3D and over a single-layer and double-layer potential to generate all the results
+from the paper.
