@@ -51,9 +51,16 @@ check-install:				## Check that pytential was correctly installed
 	$(PYTHON) -c "import pytential; print(pytential)"
 .PHONY: check-install
 
-docker-build:				## Build docker container and run experiments
-	docker build -f Dockerfile . -t qbx-direct-solver
+docker-build:				## Build docker container
+	docker buildx build \
+		--load \
+		--file Dockerfile . \
+		--tag qbx-ds-experiments:latest
+	@docker image prune --force
 .PHONY: docker-build
+
+docker-run:					## Run the docker container locally
+	docker run --interactive --tty --rm qbx-ds-experiments:latest || true
 
 run:			## Run all experiments
 	$(PYTHON) experiments/ds-run.py --no-visualize
@@ -75,12 +82,12 @@ conda-packages.txt: conda.yml
 		--file $< \
 		--dry-run --json >| conda-packages.json
 	$(PYTHON) scripts/pin-conda-environment.py \
-		--outfile $@ \
+		--force --outfile $@ \
 		conda-packages.json
 
 requirements.txt: pyproject.toml
 	uv pip compile --upgrade --universal --python-version '3.10' \
-		--extra git \
+		--extra git --extra visualization \
 		--output-file $@ $<
 
 pin: conda-packages.txt requirements.txt	## Generate pinned dependencies
