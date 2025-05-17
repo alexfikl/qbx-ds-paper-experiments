@@ -1,0 +1,155 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools>=63",
+]
+
+[project]
+name = "qbx-direct-solver"
+version = "2025.1"
+description = "QBX Direct Solver paper scripts"
+authors = [
+    { name = "Alexandru Fikl", email = "alexfikl@gmail.com" },
+    { name = "Andreas Kloeckner", email = "inform@tiker.net" },
+]
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "cython",
+    "mako",
+    "matplotlib",
+    "numpy",
+    "pyvkfft",
+    "scipy",
+    "sympy",
+]
+
+optional-dependencies.git = [
+    "arraycontext @ git+https://github.com/inducer/arraycontext.git#egg=arraycontext",
+    "boxtree @ git+https://github.com/inducer/boxtree.git#egg=boxtree",
+    "cgen @ git+https://github.com/inducer/cgen.git#egg=cgen",
+    "codepy @ git+https://github.com/inducer/codepy.git#egg=codepy",
+    "genpy @ git+https://github.com/inducer/genpy.git#egg=genpy",
+    "gmsh-interop @ git+https://github.com/inducer/gmsh_interop.git#egg=gmsh_interop",
+    "loopy @ git+https://github.com/inducer/loopy.git#egg=loopy",
+    "meshmode @ git+https://github.com/inducer/meshmode.git#egg=meshmode",
+    "modepy @ git+https://github.com/inducer/modepy.git#egg=modepy",
+    "pymbolic @ git+https://github.com/inducer/pymbolic.git#egg=pymbolic",
+    "pytential @ git+https://github.com/alexfikl/pytential.git@direct-solver-solve#egg=pytential",
+    "pytools @ git+https://github.com/inducer/pytools.git#egg=pytools",
+    "sumpy @ git+https://github.com/inducer/sumpy.git#egg=sumpy",
+]
+optional-dependencies.visualization = [
+    "scienceplots>=2",
+]
+
+[tool.ruff]
+preview = true
+
+lint.extend-select = [
+    "B",   # flake8-bugbear
+    "C",   # flake8-comprehensions
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "G",   # flake8-logging-format
+    "I",   # flake8-isort
+    "N",   # pep8-naming
+    "NPY", # numpy
+    "Q",   # flake8-quotes
+    "RUF", # ruff
+    "SIM", # flake8-simplif
+    "UP",  # pyupgrade
+    "W",   # pycodestyle
+]
+lint.extend-ignore = [
+    "C90",   # McCabe complexity
+    "E226",  # missing whitespace around arithmetic operator
+    "E241",  # multiple spaces after comma
+    "E242",  # tab after comma
+    "E265",  # comment should have a space
+    "E402",  # module level import not at the top of file
+    "N803",  # argument should be lower case
+    "N806",  # variable should be lower case
+    "UP032", # use f-strings instead of .format
+]
+lint.per-file-ignores."*.ipynb" = [ "I002" ]
+lint.flake8-quotes.docstring-quotes = "double"
+lint.flake8-quotes.inline-quotes = "double"
+lint.flake8-quotes.multiline-quotes = "double"
+lint.isort.combine-as-imports = true
+lint.isort.known-first-party = [
+    "arraycontext",
+    "boxtree",
+    "loopy",
+    "meshmode",
+    "modepy",
+    "pymbolic",
+    "pyopencl",
+    "pytools",
+    "pytential",
+    "sumpy",
+]
+lint.isort.known-local-folder = [
+    "cs598apk",
+    "cs598pytential",
+    "direct_solver_tools",
+    "hss_tools",
+    "nbpytential",
+]
+lint.isort.lines-after-imports = 2
+lint.isort.required-imports = [ "from __future__ import annotations" ]
+
+[tool.pylint]
+jobs = 4
+extension-pkg-whitelist = "numpy"
+ignored-modules = "matplotlib"
+
+[tool.pylint.messages_control]
+enable = [
+    "I0021", # useless-suppression
+]
+disable = [
+    "C0103", # invalid-name
+    "C0114", # missing-module-docstring
+    "C0115", # missing-class-docstring
+    "C0116", # missing-function-docstring
+    "C0302", # too-many-lines
+    "C0411", # wrong-import-order
+    "C0412", # ungrouped-imports
+    "C0413", # wrong-import-position
+    "C0415", # import-outside-toplevel
+    "E1136", # unsubscriptable-object
+    "R0801", # duplicate-code
+    "R0902", # too-many-instance-attributes
+    "R0903", # too-few-public-methods
+    "R0912", # too-many-branches
+    "R0913", # too-many-arguments
+    "R0914", # too-many-locals
+    "R0915", # too-many-statements
+    "R0917", # too-many-positional-arguments
+    "R1705", # no-else-return
+    "W0122", # exec-used
+    "W0123", # eval-used
+    "W0212", # protected-access
+    "W0511", # fixme
+    "W0603", # global-statement
+    "W0611", # unused-import
+    "W0613", # unused-argument
+    "W0621", # redefined-outer-name
+    "W0622", # redefined-builtin
+    "W0718", # broad-exception-caught
+]
+
+[tool.typos.default.extend-words]
+mis = "mis"
+arange = "arange"

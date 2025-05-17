@@ -23,7 +23,7 @@ docker-build:				## Build docker container and run experiments
 
 conda-packages.txt: conda.yml
 	$(MAMBA) create \
-		-n paper-test-code \
+		-n qbx-ds-experiments \
 		--file $< \
 		--dry-run --json >| conda-packages.json
 	$(PYTHON) ../scripts/pin-conda-environment.py \
@@ -35,15 +35,16 @@ requirements.txt: ../pyproject.toml
 		--extra git \
 		--output-file $@ $<
 
-pin-deps: conda-packages.txt requirements.txt	## Generate pinned dependencies
+pin: conda-packages.txt requirements.txt	## Generate pinned dependencies
 	cat $^
-.PHONY: pin-deps
+.PHONY: pin
 
 # }}}
 
-purge:						## Remove all generated files
-	rm -rf \
-		conda-packages.json \
-		conda-packages.txt \
-		requirements.txt
+clean:						## Remove temporary files
+	rm -rf conda-packages.json
+.PHONY: clean
+
+purge: clean				## Remove all generated files
+	rm -rf conda-packages.txt requirements.txt
 .PHONY: purge
