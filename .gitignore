@@ -18,6 +18,5 @@ __pycache__
 *.gif
 *.svg
 *.vtu
-docker/experiments/*.tikz
-
-docker/*.json
+*.json
+experiments/*.tikz

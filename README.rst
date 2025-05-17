@@ -32,7 +32,7 @@ To update the versions to the latest ones, you can use
 
 .. code:: bash
 
-    make pin-deps
+    make -B pin
 
 Reproducing results
 -------------------

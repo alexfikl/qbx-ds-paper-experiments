@@ -74,11 +74,11 @@ conda-packages.txt: conda.yml
 		-n qbx-ds-experiments \
 		--file $< \
 		--dry-run --json >| conda-packages.json
-	$(PYTHON) ../scripts/pin-conda-environment.py \
+	$(PYTHON) scripts/pin-conda-environment.py \
 		--outfile $@ \
 		conda-packages.json
 
-requirements.txt: ../pyproject.toml
+requirements.txt: pyproject.toml
 	uv pip compile --upgrade --universal --python-version '3.10' \
 		--extra git \
 		--output-file $@ $<
