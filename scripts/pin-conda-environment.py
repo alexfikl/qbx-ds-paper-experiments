@@ -49,7 +49,7 @@ def convert_conda_json(
     with open(outfile, "w", encoding="utf-8") as outfd:
         outfd.write("@EXPLICIT\n")
         for package in packages["actions"]["FETCH"]:
-            outfd.write(f"{package['url']}\n")
+            outfd.write(f"{package['url']}#{package['sha256']}\n")
 
     return 0
 
