@@ -1,13 +1,13 @@
 [build-system]
-build-backend = "setuptools.build_meta"
+build-backend = "hatchling.build"
 requires = [
-    "setuptools>=63",
+    "hatchling>=1.10",
 ]
 
 [project]
-name = "qbx-direct-solver"
-version = "2025.1"
-description = "QBX Direct Solver paper scripts"
+name = "qbx-ds-experiments"
+version = "2025.5"
+description = "QBX direct solver paper experiments"
 authors = [
     { name = "Alexandru Fikl", email = "alexfikl@gmail.com" },
     { name = "Andreas Kloeckner", email = "inform@tiker.net" },
@@ -90,21 +90,15 @@ lint.isort.combine-as-imports = true
 lint.isort.known-first-party = [
     "arraycontext",
     "boxtree",
+    "common_ds_tools",
     "loopy",
     "meshmode",
     "modepy",
     "pymbolic",
     "pyopencl",
-    "pytools",
     "pytential",
+    "pytools",
     "sumpy",
-]
-lint.isort.known-local-folder = [
-    "cs598apk",
-    "cs598pytential",
-    "direct_solver_tools",
-    "hss_tools",
-    "nbpytential",
 ]
 lint.isort.lines-after-imports = 2
 lint.isort.required-imports = [ "from __future__ import annotations" ]

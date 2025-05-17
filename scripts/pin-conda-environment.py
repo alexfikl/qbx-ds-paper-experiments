@@ -27,7 +27,9 @@ Examples:
 
 
 def convert_conda_json(
-    infile: pathlib.Path, outfile: pathlib.Path | None = None, overwrite: bool = False,
+    infile: pathlib.Path,
+    outfile: pathlib.Path | None = None,
+    overwrite: bool = False,
 ) -> int:
     if not infile.exists():
         log.error("File does not exist: '%s'.", infile)
@@ -75,4 +77,10 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    raise SystemExit(convert_conda_json(args.filename, outfile=args.outfile, overwrite=args.force))
+    raise SystemExit(
+        convert_conda_json(
+            args.filename,
+            outfile=args.outfile,
+            overwrite=args.force,
+        )
+    )
