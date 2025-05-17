@@ -25,8 +25,8 @@ Locked dependencies
 This contains a list of hardcoded dependencies at the time of writing to
 ensure reproducible results. They can be found in
 
-* `conda-packages.txt`: base system Conda dependencies.
-* `requirements.txt`: additional Python dependencies.
+* ``conda-packages.txt``: base system Conda dependencies.
+* ``requirements.txt``: additional Python dependencies.
 
 To update the versions to the latest ones, you can use
 
