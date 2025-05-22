@@ -5,8 +5,8 @@ Introduction
     :target: https://spdx.org/licenses/MIT.html
     :alt: MIT License
 
-.. |badge-zenodo| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.15487042.svg
-    :target: https://doi.org/10.5281/zenodo.15487042
+.. |badge-zenodo| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.15487041.svg
+    :target: https://doi.org/10.5281/zenodo.15487041
     :alt: Zenodo repository
 
 |badge-license| |badge-zenodo|
