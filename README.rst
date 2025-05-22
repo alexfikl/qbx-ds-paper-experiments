@@ -1,6 +1,15 @@
 Introduction
 ------------
 
+.. |badge-license| image:: https://img.shields.io/badge/License-MIT-blue.svg
+    :target: https://spdx.org/licenses/MIT.html
+    :alt: MIT License
+.. |badge-zenodo| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.15487042.svg
+    :target: https://doi.org/10.5281/zenodo.15487042
+    :alt: Zenodo repository
+
+|badge-zenodo|
+
 This contains a `docker` image and some scripts in the `experiments` folder
 that are used to generate the results from the paper in a reproducible manner.
 
