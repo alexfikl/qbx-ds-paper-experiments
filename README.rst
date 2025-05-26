@@ -11,8 +11,8 @@ Introduction
 
 |badge-license| |badge-zenodo|
 
-This contains a `docker` image and some scripts in the `experiments` folder
-that are used to generate the results from the paper in a reproducible manner.
+This contains a Docker image and some scripts that are used to generate the
+results from the paper in a reproducible manner.
 
 Building Docker Image
 ---------------------
@@ -32,20 +32,23 @@ or, equivalently
 Reproducing results
 -------------------
 
-To run the scripts in the ``experiments`` folder you need to go trough the followin
+To run the scripts in the ``experiments`` folder you need to go through the following
 steps
 
 .. code:: bash
 
-    # enter the container that was built as above
+    # 1. build the container as above
+    # 2. enter the container using:
     make docker-run
-    # inside the containter:
+    # 3. inside the container:
     source "${HOME}/.miniforge/bin/activate" paper
     make run
     make visualize
 
-The first command ``make run`` will run all the experiments and generate a set of
-``npz`` files with the results. These can then be visualized with ``make visualize``.
+The first ``make run`` command will run all the experiments and generate a set of
+``npz`` files with the results. This can take a very long time and uses all
+available CPU cores (through OpenCL and PoCL), so make sure to have the necessary
+resources. The results can then be visualized with ``make visualize``.
 
 You can of course also run the scripts individually by calling the respective
 file. The ``make run`` command will automatically run the experiments over 2D and
@@ -55,8 +58,8 @@ from the paper.
 Locked dependencies
 -------------------
 
-This contains a list of hardcoded dependencies at the time of writing to
-ensure reproducible results. They can be found in
+The repository contains a list of hardcoded dependencies at the time of writing
+to ensure reproducible results. They can be found in
 
 * ``conda-packages.txt``: base system Conda dependencies.
 * ``requirements.txt``: additional Python dependencies.
