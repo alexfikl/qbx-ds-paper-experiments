@@ -10,7 +10,7 @@ import pathlib
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias
 
 import matplotlib.pyplot as mp
 import numpy as np
@@ -28,6 +28,12 @@ if TYPE_CHECKING:
 PathLike = str | pathlib.Path
 _DS_QBX_LOGGING_SET_UP = False
 _DS_QBX_NO_TIMESTAMP = "DS_QBX_NO_TIMESTAMP" in os.environ
+
+
+Array: TypeAlias = np.ndarray[tuple[int, ...], np.dtype[np.inexact]]
+RealArray: TypeAlias = np.ndarray[tuple[int, ...], np.dtype[np.floating]]
+PointsArray: TypeAlias = np.ndarray[tuple[int, ...], np.dtype[np.floating]]
+IndexArray: TypeAlias = np.ndarray[tuple[int, ...], np.dtype[np.integer]]
 
 
 def set_up_logging(
@@ -249,7 +255,7 @@ def axis(
 # {{{ errors
 
 
-def rel_norm(A: np.ndarray, B: np.ndarray, ord: Any = 2) -> float:
+def rel_norm(A: Array, B: Array, ord: Any = 2) -> float:
     """Computer a relative error norm."""
     b_norm = la.norm(B, ord=ord)
     if b_norm < 1.0e-8:
@@ -258,7 +264,7 @@ def rel_norm(A: np.ndarray, B: np.ndarray, ord: Any = 2) -> float:
     return la.norm(A - B) / b_norm
 
 
-def estimate_order_of_convergence(x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
+def estimate_order_of_convergence(x: RealArray, y: RealArray) -> tuple[float, float]:
     assert x.size == y.size
     if x.size <= 1:
         raise RuntimeError("Need at least two values to estimate order.")
@@ -269,8 +275,11 @@ def estimate_order_of_convergence(x: np.ndarray, y: np.ndarray) -> tuple[float, 
 
 
 def estimate_gliding_order_of_convergence(
-    x: np.ndarray, y: np.ndarray, *, gliding_mean: int | None = None
-) -> np.ndarray:
+    x: RealArray,
+    y: RealArray,
+    *,
+    gliding_mean: int | None = None,
+) -> RealArray:
     assert x.size == y.size
     if x.size <= 1:
         raise RuntimeError("Need at least two values to estimate order.")
@@ -300,12 +309,12 @@ class EOCRecorder:
         self.history.append((float(h), float(error)))
 
     @property
-    def error(self) -> np.ndarray:
+    def error(self) -> RealArray:
         _, error = np.array(self.history).T
         return error
 
     @property
-    def h(self) -> np.ndarray:
+    def h(self) -> RealArray:
         h, _ = np.array(self.history).T
         return h
 
@@ -357,8 +366,8 @@ class EOCRecorder:
     def from_array(
         cls,
         name: str,
-        h: np.ndarray,
-        error: np.ndarray,
+        h: RealArray,
+        error: RealArray,
         *,
         abscissa: str = "h",
     ) -> EOCRecorder:
@@ -480,7 +489,7 @@ class TimingResult:
     std: float
 
     @classmethod
-    def from_array(cls, name: str, timings: np.ndarray) -> list[TimingResult]:
+    def from_array(cls, name: str, timings: RealArray) -> list[TimingResult]:
         return [cls(name, t[0], t[1], t[2]) for t in timings.T]
 
     def __str__(self) -> str:
@@ -515,7 +524,7 @@ def timeit(
 
 def visualize_timings(
     filename: PathLike,
-    abscissa: np.ndarray,
+    abscissa: RealArray,
     *timings: Sequence[TimingResult],
     xlabel: str | None = None,
     ylabel: str | None = None,
@@ -573,6 +582,9 @@ class GeometryParameters:
     qbx_order: int
     source_ovsmp: int
 
+    inner_radius: float
+    outer_radius: float
+
     @property
     def fine_order(self) -> int:
         return self.source_ovsmp * self.target_order
@@ -590,6 +602,7 @@ def make_uniform_random_array(
     if rng is None:
         rng = np.random.default_rng()
 
+    ary = rng.uniform
     from arraycontext import unflatten
 
     template = actx.thaw(discr.nodes()[0])
@@ -598,12 +611,65 @@ def make_uniform_random_array(
     )
 
 
+def make_circular_point_group(
+    ambient_dim: int,
+    npoints: int,
+    radius: float,
+    center: Array | None = None,
+):
+    if center is None:
+        center = np.array([0.0, 0.0])
+    center = np.asarray(center)
+
+    t = np.linspace(0.0, 1.0, npoints, endpoint=False)
+    t = 2.0 * np.pi * t ** 1.5
+
+    result = np.zeros((ambient_dim, npoints))
+    result[:2, :] = center[:, None] + radius * np.vstack([np.cos(t), np.sin(t)])
+
+    return result
+
+
+def make_source_and_target_points(
+    actx: PyOpenCLArrayContext,
+    *,
+    side: int,
+    inner_radius: float,
+    outer_radius: float,
+    ambient_dim: int,
+    nsources: int = 10,
+    ntargets: int = 20,
+) -> tuple[PointsArray, PointsArray]:
+    if side == -1:
+        test_src_geo_radius = outer_radius
+        test_tgt_geo_radius = inner_radius
+    elif side == +1:
+        test_src_geo_radius = inner_radius
+        test_tgt_geo_radius = outer_radius
+    else:
+        raise ValueError(f"unknown side: {side}")
+
+    from pytential.source import PointPotentialSource
+
+    point_sources = make_circular_point_group(
+        ambient_dim, nsources, test_src_geo_radius
+    )
+    point_source = PointPotentialSource(actx.freeze(actx.from_numpy(point_sources)))
+
+    from pytential.target import PointsTarget
+
+    test_targets = make_circular_point_group(ambient_dim, ntargets, test_tgt_geo_radius)
+    point_target = PointsTarget(actx.freeze(actx.from_numpy(test_targets)))
+
+    return point_source, point_target
+
+
 def make_geometry_sphere(
     actx: PyOpenCLArrayContext,
     *,
     target_order: int,
     radius: float,
-    center: np.ndarray,
+    center: PointsArray,
 ) -> Discretization:
     from meshmode.mesh.generation import generate_sphere
 
@@ -656,6 +722,14 @@ def make_geometry_collection(
         fmm_order=False,
     )
 
+    sources, targets = make_source_and_target_points(
+        actx,
+        side=-1,
+        inner_radius=param.inner_radius,
+        outer_radius=param.outer_radius,
+        ambient_dim=mesh.ambient_dim,
+    )
+
     from pytential import GeometryCollection, sym
 
     dd = sym.DOFDescriptor("ds", discr_stage=sym.QBX_SOURCE_STAGE2)
@@ -663,6 +737,8 @@ def make_geometry_collection(
         {
             "ds": qbx_ds,
             "fmm": qbx_fmm,
+            "point_sources": sources,
+            "point_targets": targets,
         },
         auto_where=dd,
     )
@@ -685,6 +761,9 @@ class ExperimentParameters(GeometryParameters):
     # NOTE: none of the tests use QBX_SOURCE_STAGE2_QUAD
     source_ovsmp: int = 4
 
+    inner_radius: float = 1.0
+    outer_radius: float = 1.0
+
     id_eps: float = 1.0e-8
 
     proxy_approx_count: int = 64
@@ -698,7 +777,7 @@ class ExperimentParameters(GeometryParameters):
     def make_mesh(self) -> Mesh:
         raise NotImplementedError
 
-    def get_model_proxy_count(self) -> np.ndarray:
+    def get_model_proxy_count(self) -> IndexArray:
         raise NotImplementedError
 
 
@@ -720,6 +799,10 @@ class ExperimentParameters2(ExperimentParameters):
     starfish_arms: int = 16
     starfish_amplitude: float = 0.25
 
+    # NOTE: these are valid for the (arms, amplitude) above
+    inner_radius: float = 0.25
+    outer_radius: float = 2.0
+
     def make_mesh(self) -> Mesh:
         from meshmode.mesh.generation import NArmedStarfish, make_curve_mesh
 
@@ -731,7 +814,7 @@ class ExperimentParameters2(ExperimentParameters):
 
         return mesh
 
-    def get_model_proxy_count(self) -> np.ndarray:
+    def get_model_proxy_count(self) -> IndexArray:
         from pytools.persistent_dict import KeyBuilder
 
         keyb = KeyBuilder()
@@ -804,6 +887,9 @@ class ExperimentParametersTorus3(ExperimentParameters):
     torus_radius_outer: float = 10.0
     torus_radius_inner: float = 2.0
 
+    inner_radius: float = 10.0
+    outer_radius: float = 14.0
+
     def make_mesh(self) -> Mesh:
         from meshmode.mesh.generation import generate_torus
         from meshmode.mesh.refinement import refine_uniformly
@@ -828,7 +914,7 @@ class ExperimentParametersTorus3(ExperimentParameters):
 
         return mesh
 
-    def get_model_proxy_count(self) -> np.ndarray:
+    def get_model_proxy_count(self) -> IndexArray:
         from pytools.persistent_dict import KeyBuilder
 
         keyb = KeyBuilder()
@@ -918,7 +1004,7 @@ class ExperimentParametersSphere3(ExperimentParameters):
 
         return mesh
 
-    def get_model_proxy_count(self) -> np.ndarray:
+    def get_model_proxy_count(self) -> IndexArray:
         raise NotImplementedError
 
 
@@ -928,12 +1014,12 @@ class ExperimentParametersSphere3(ExperimentParameters):
 # {{{ cluster handling
 
 
-def intersect1d(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+def intersect1d(x: RealArray, y: RealArray) -> IndexArray:
     """Find the indices that correspond to the intersection of *x* and *y*."""
     return np.where((x.reshape(1, -1) - y.reshape(-1, 1)) == 0)[1]
 
 
-def cluster_take(mat: np.ndarray, cl: TargetAndSourceClusterList) -> np.ndarray:
+def cluster_take(mat: Array, cl: TargetAndSourceClusterList) -> Array:
     """Take and reshape all clusters from *mat*.
 
     :arg mat: an array of shape ``(n,)`` containing matrix entries for all the
@@ -950,10 +1036,10 @@ def cluster_take(mat: np.ndarray, cl: TargetAndSourceClusterList) -> np.ndarray:
 
 
 def skeleton_cluster_take(
-    mat: np.ndarray,
+    mat: Array,
     skeleton: SkeletonizationResult,
     clusters: tuple[tuple[int, int], ...],
-) -> np.ndarray:
+) -> Array:
     """Take a subset of the entries in *mat* that correspond to the skeleton.
 
     :arg mat: the result of :func:`cluster_take`.
@@ -1004,11 +1090,11 @@ class Model(NamedTuple):
     """Smallest proxy radius (minimum over all clusters)."""
 
 
-def to_model(ary: np.ndarray) -> Model:
+def to_model(ary: RealArray) -> Model:
     return Model(int(ary[0]), ary[1], int(ary[2]), ary[3], ary[4], ary[5], ary[6])
 
 
-def to_models(ary: np.ndarray) -> tuple[Model, ...]:
+def to_models(ary: RealArray) -> tuple[Model, ...]:
     assert ary.ndim == 2
     return tuple(to_model(p) for p in ary)
 
@@ -1040,12 +1126,12 @@ class ModelConstant(NamedTuple):
         return c_id, c_mp
 
 
-def to_const(ary: np.ndarray) -> ModelConstant:
+def to_const(ary: RealArray) -> ModelConstant:
     assert ary.shape == (3,)
     return ModelConstant(*ary)
 
 
-def to_consts(ary: np.ndarray) -> tuple[ModelConstant, ...]:
+def to_consts(ary: RealArray) -> tuple[ModelConstant, ...]:
     assert ary.ndim == 2
     return tuple(to_const(c) for c in ary)
 
@@ -1268,7 +1354,7 @@ def em_constant_correction(
 def em_constant_fit(
     ms: tuple[Model, ...],
     cs: tuple[ModelConstant, ...],
-    target_error: np.ndarray,
+    target_error: RealArray,
     *,
     c_rank: int | None = None,
     rng: np.random.Generator | None = None,
@@ -1292,7 +1378,7 @@ def em_constant_fit(
         dtype=dtype,
     )
 
-    def get_estimated_error(x: np.ndarray) -> np.ndarray:
+    def get_estimated_error(x: RealArray) -> RealArray:
         return np.array([
             em_estimate_error_from_parameters(
                 m_i,
@@ -1302,7 +1388,7 @@ def em_constant_fit(
             for m_i, c_i in zip(ms, cs, strict=True)
         ])
 
-    def f(x: np.ndarray) -> np.ndarray:
+    def f(x: RealArray) -> RealArray:
         return abs(get_estimated_error(x) - target_error) / target_error
 
     import scipy.optimize as so
