@@ -63,7 +63,7 @@ log = set_up_logging(__name__)
 def seeded_rng(seed: int = 42) -> np.random.Generator:
     import scipy.linalg.interpolative as sli
 
-    # NOTE: also set global seeds in case any other randomess is lurking around
+    # NOTE: also set global seeds in case any other randomness is lurking around
     sli.seed(seed)
     np.random.seed(seed)  # noqa: NPY002
 
