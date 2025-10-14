@@ -602,7 +602,6 @@ def make_uniform_random_array(
     if rng is None:
         rng = np.random.default_rng()
 
-    ary = rng.uniform
     from arraycontext import unflatten
 
     template = actx.thaw(discr.nodes()[0])
@@ -622,7 +621,7 @@ def make_circular_point_group(
     center = np.asarray(center)
 
     t = np.linspace(0.0, 1.0, npoints, endpoint=False)
-    t = 2.0 * np.pi * t ** 1.5
+    t = 2.0 * np.pi * t**1.5
 
     result = np.zeros((ambient_dim, npoints))
     result[:2, :] = center[:, None] + radius * np.vstack([np.cos(t), np.sin(t)])

@@ -323,22 +323,66 @@ def experiment_visualize(
     color = cycle(mp.rcParams["axes.prop_cycle"].by_key()["color"])
 
     with ds.axis(fig, f"{basename}-scaling.{ext}", overwrite=overwrite) as ax1:
-        order = 1 if ambient_dim == 2 else 1.5
+        # {{{ plot timings
 
-        ymax = np.max(build_timings[1, :])
-        ymin = np.min(build_timings[1, :])
-        xmax = resolutions[-1]
-        xmin = np.exp(np.log(xmax) + np.log(ymin / ymax) / order)
+        lines = []
+        labels = []
 
-        (ln1,) = ax1.loglog(resolutions, build_timings[1, :], "v-", color=next(color))
+        (line,) = ax1.loglog(resolutions, build_timings[1, :], "v-", color=next(color))
+        lines.append(line)
+        labels.append(r"Build $(\leftarrow)$")
         # ax1.fill_between(
         #     resolutions,
         #     build_timings[1, :] - build_timings[2, :],
         #     build_timings[1, :] + build_timings[2, :],
-        #     color=ln1.get_color(),
+        #     color=line.get_color(),
         #     alpha=0.25,
         # )
-        (ln2,) = ax1.loglog([xmin, xmax], [ymin, ymax], "k--")
+
+        ax2 = ax1.twinx()
+        (line,) = ax2.loglog(resolutions, solve_timings[1, :], "^-", color=next(color))
+        lines.append(line)
+        labels.append(r"Solve $(\rightarrow)$")
+        # ax2.fill_between(
+        #     resolutions,
+        #     solve_timings[1, :] - solve_timings[2, :],
+        #     solve_timings[1, :] + solve_timings[2, :],
+        #     color=line.get_color(),
+        #     alpha=0.25,
+        # )
+
+        # }}}
+
+        # {{{ plot expected scaling
+
+        order = 1 if ambient_dim == 2 else 1.5
+        # compute polynomial order line
+        ymax = np.max(build_timings[1, :])
+        ymin = np.min(build_timings[1, :])
+        xmax = resolutions[-1]
+        xmin = np.exp(np.log(xmax) + np.log(ymin / ymax) / order)
+        log.info("O(n^p):     [%g, %g] x [%g, %g]", xmin, xmax, ymin, ymax)
+
+        (line,) = ax1.loglog([xmin, xmax], [ymin, ymax], "k--")
+        lines.append(line)
+        labels.append("$O(n)$" if ambient_dim == 2 else "$O(n^{1.5})$")
+
+        if ambient_dim == 3:
+            from scipy.special import lambertw
+
+            # compute n log n order line
+            ymax = np.max(solve_timings[1, :])
+            ymin = np.min(solve_timings[1, :])
+            xmax = resolutions[-1]
+            k = xmax * np.log(xmax) / (ymax / ymin)
+            xmin = np.real(k / lambertw(k))
+            log.info("O(n log n): [%g, %g] x [%g, %g]", xmin, xmax, ymin, ymax)
+
+            (line,) = ax2.loglog([xmin, xmax], [ymin, ymax], "k:")
+            lines.append(line)
+            labels.append(r"$O(n \log n)$")
+
+        # }}}
 
         ax1.set_xlabel("$n$")
         ax1.set_ylabel("Build time (s)")
@@ -346,27 +390,12 @@ def experiment_visualize(
         fmt = ticker.FuncFormatter(lambda x, _: f"{x:.1f}")
         ax1.yaxis.set_minor_formatter(fmt)
         ax1.yaxis.set_major_formatter(fmt)
+        ax1.legend(lines, labels)
 
-        ax2 = ax1.twinx()
-        (ln3,) = ax2.loglog(resolutions, solve_timings[1, :], "^-", color=next(color))
-        # ax2.fill_between(
-        #     resolutions,
-        #     solve_timings[1, :] - solve_timings[2, :],
-        #     solve_timings[1, :] + solve_timings[2, :],
-        #     color=ln3.get_color(),
-        #     alpha=0.25,
-        # )
         ax2.set_ylabel("Solve time (s)", rotation=-90, labelpad=25)
-
         fmt = ticker.FuncFormatter(lambda x, _: f"{x:.2f}")
         ax2.yaxis.set_minor_formatter(fmt)
         ax2.yaxis.set_major_formatter(fmt)
-
-        olabel = "$O(n)$" if ambient_dim == 2 else "$O(n^{1.5})$"
-        ax1.legend(
-            [ln1, ln3, ln2],
-            [r"Build $(\leftarrow)$", r"Solve $(\rightarrow)$", olabel],
-        )
 
     return 0
 
