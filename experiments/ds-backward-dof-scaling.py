@@ -199,7 +199,7 @@ def experiment_run(
     if ambient_dim == 2:
         param = ds.ExperimentParameters2(**kwargs)
     else:
-        param = ds.ExperimentParametersTorus3(**kwargs)
+        param = ds.ExperimentParametersSphere3(**kwargs)
 
     filename = ds.make_archive(scriptname, param, suffix=suffix)
     if not overwrite and filename.exists():
