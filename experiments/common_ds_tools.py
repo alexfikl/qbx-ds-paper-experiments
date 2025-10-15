@@ -566,6 +566,30 @@ def visualize_timings(
     mp.close(fig)
 
 
+@contextmanager
+def profileit(
+    outfile: PathLike | None = None,
+    *,
+    overwrite: bool = False,
+) -> Iterator[None]:
+    if outfile is not None:
+        outfile = pathlib.Path(outfile)
+        if not overwrite and outfile.exists():
+            raise FileExistsError(outfile)
+
+    import cProfile
+
+    p = cProfile.Profile()
+    p.enable()
+
+    try:
+        yield None
+    finally:
+        p.disable()
+        if outfile is not None:
+            p.dump_stats(outfile)
+
+
 # }}}
 
 
