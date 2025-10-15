@@ -68,7 +68,8 @@ lint.extend-select = [
     "NPY", # numpy
     "Q",   # flake8-quotes
     "RUF", # ruff
-    "SIM", # flake8-simplif
+    "SIM", # flake8-simplify
+    "TC",  # flake8-type-checking
     "UP",  # pyupgrade
     "W",   # pycodestyle
 ]

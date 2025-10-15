@@ -7,12 +7,16 @@ from __future__ import annotations
 
 import pathlib
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 import common_ds_tools as ds
-from meshmode.array_context import PyOpenCLArrayContext
-from pytential.collection import GeometryCollection
+
+
+if TYPE_CHECKING:
+    from meshmode.array_context import PyOpenCLArrayContext
+    from pytential.collection import GeometryCollection
 
 
 scriptname = pathlib.Path(__file__)

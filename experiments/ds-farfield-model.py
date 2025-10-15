@@ -7,13 +7,17 @@ from __future__ import annotations
 
 import pathlib
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.linalg as la
 
 import common_ds_tools as ds
-from meshmode.array_context import PyOpenCLArrayContext
-from pytential.linalg.skeletonization import SkeletonizationResult
+
+
+if TYPE_CHECKING:
+    from meshmode.array_context import PyOpenCLArrayContext
+    from pytential.linalg.skeletonization import SkeletonizationResult
 
 
 scriptname = pathlib.Path(__file__)

@@ -7,13 +7,16 @@ from __future__ import annotations
 
 import pathlib
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 import common_ds_tools as ds
-from meshmode.array_context import PyOpenCLArrayContext
-from pytential.collection import GeometryCollection
 
+
+if TYPE_CHECKING:
+    from meshmode.array_context import PyOpenCLArrayContext
+    from pytential.collection import GeometryCollection
 
 scriptname = pathlib.Path(__file__)
 log = ds.set_up_logging("ds")
@@ -111,6 +114,9 @@ def run(
         )
 
         hmat = wrangler.get_backward()
+
+        # NOTE: this is likely not required either, because the last step of
+        # constructing hmat is converting everything into numpy arrays anyway
         actx.queue.finish()
         return wrangler, hmat
 
@@ -122,6 +128,9 @@ def run(
 
     def ds_solve():
         result = hmat @ b_ref
+
+        # NOTE: this is not particularly needed, because hmat is all in numpy
+        # right now, but just in case there's some lingering work to be done
         actx.queue.finish()
         return result
 
@@ -243,8 +252,9 @@ def experiment_run(
             )
             eocfmm.add_data_point(result.ndofs, result.fmm_solve.mean)
 
-        log.info("\n%s", eocds)
-        log.info("\n%s", eocfmm)
+        if len(eocds.history) > 1:
+            log.info("\n%s", eocds)
+            log.info("\n%s", eocfmm)
 
         ds.savez(
             filename,

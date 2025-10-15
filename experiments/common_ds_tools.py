@@ -3,11 +3,9 @@
 
 from __future__ import annotations
 
-import argparse
 import logging
 import os
 import pathlib
-from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias
@@ -18,6 +16,9 @@ import numpy.linalg as la
 
 
 if TYPE_CHECKING:
+    import argparse
+    from collections.abc import Callable, Iterator, Sequence
+
     from arraycontext import PyOpenCLArrayContext
     from meshmode.discretization import Discretization
     from meshmode.mesh import Mesh
