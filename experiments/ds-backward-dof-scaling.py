@@ -47,6 +47,7 @@ def run(
     *,
     rng: np.random.Generator | None = None,
     use_fmm: bool = True,
+    is_profiling: bool = True,
 ) -> ExperimentResult:
     if rng is None:
         rng = ds.seeded_rng(seed=42)
@@ -137,8 +138,30 @@ def run(
     # NOTE: ensure the work is done before we start timing
     actx.queue.finish()
 
-    build_time = ds.timeit(ds_build_hmatrix, name="Build")
-    solve_time = ds.timeit(ds_solve, name="Solve")
+    if is_profiling:
+        # from pytools import ProcessTimer
+
+        # with ProcessTimer() as p:
+        #     ds_build_hmatrix()
+        # log.info("BUILD: %s", p)
+        # build_time = ds.TimingResult(
+        #     name="Build", walltime=p.wall_elapsed, mean=p.wall_elapsed, std=0.0
+        # )
+
+        # with ProcessTimer() as p:
+        #     ds_solve()
+        # log.info("SOLVE: %s", p)
+        # solve_time = ds.TimingResult(
+        #     name="Solve", walltime=p.wall_elapsed, mean=p.wall_elapsed, std=0.0
+        # )
+
+        build_time = ds.TimingResult(name="Build", walltime=0.0, mean=0.0, std=0.0)
+        solve_time = ds.TimingResult(name="Solve", walltime=0.0, mean=0.0, std=0.0)
+        with ds.profileit("profile-2.cProfile", overwrite=True):
+            ds_solve()
+    else:
+        build_time = ds.timeit(ds_build_hmatrix, name="Build")
+        solve_time = ds.timeit(ds_solve, name="Solve")
 
     # }}}
 
@@ -225,7 +248,8 @@ def experiment_run(
     from pytools import ProcessTimer
 
     with ProcessTimer() as p:
-        for resolution in param.resolutions:
+        # for resolution in param.resolutions:
+        for resolution in [0.18]:
             rng = ds.seeded_rng(seed=42)
 
             places = ds.make_geometry_collection(
@@ -338,28 +362,28 @@ def experiment_visualize(
         lines = []
         labels = []
 
-        (line,) = ax1.loglog(resolutions, build_timings[1, :], "v-", color=next(color))
+        (line,) = ax1.loglog(resolutions, build_timings[0, :], "v-", color=next(color))
         lines.append(line)
         labels.append(r"Build $(\leftarrow)$")
-        # ax1.fill_between(
-        #     resolutions,
-        #     build_timings[1, :] - build_timings[2, :],
-        #     build_timings[1, :] + build_timings[2, :],
-        #     color=line.get_color(),
-        #     alpha=0.25,
-        # )
+        ax1.fill_between(
+            resolutions,
+            build_timings[1, :] - build_timings[2, :],
+            build_timings[1, :] + build_timings[2, :],
+            color=line.get_color(),
+            alpha=0.25,
+        )
 
         ax2 = ax1.twinx()
-        (line,) = ax2.loglog(resolutions, solve_timings[1, :], "^-", color=next(color))
+        (line,) = ax2.loglog(resolutions, solve_timings[0, :], "^-", color=next(color))
         lines.append(line)
         labels.append(r"Solve $(\rightarrow)$")
-        # ax2.fill_between(
-        #     resolutions,
-        #     solve_timings[1, :] - solve_timings[2, :],
-        #     solve_timings[1, :] + solve_timings[2, :],
-        #     color=line.get_color(),
-        #     alpha=0.25,
-        # )
+        ax2.fill_between(
+            resolutions,
+            solve_timings[1, :] - solve_timings[2, :],
+            solve_timings[1, :] + solve_timings[2, :],
+            color=line.get_color(),
+            alpha=0.25,
+        )
 
         # }}}
 
