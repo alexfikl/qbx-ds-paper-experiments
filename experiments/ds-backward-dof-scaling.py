@@ -299,7 +299,6 @@ def experiment_visualize(
     # fmm_timings = data["fmm_timings"]
 
     import matplotlib.pyplot as mp
-    from matplotlib import ticker
 
     if show_timings:
         ds.visualize_timings(
@@ -327,85 +326,57 @@ def experiment_visualize(
             overwrite=overwrite,
         )
 
-    from itertools import cycle
-
     fig = mp.figure(figsize=(8, 7))
-    color = cycle(mp.rcParams["axes.prop_cycle"].by_key()["color"])
 
-    with ds.axis(fig, f"{basename}-scaling.{ext}", overwrite=overwrite) as ax1:
+    with ds.axis(fig, f"{basename}-scaling.{ext}", overwrite=overwrite) as ax:
         # {{{ plot timings
 
-        lines = []
-        labels = []
+        (line,) = ax.loglog(resolutions, build_timings[1, :], "v-", label=r"Build")
+        ax.fill_between(
+            resolutions,
+            build_timings[1, :] - build_timings[2, :],
+            build_timings[1, :] + build_timings[2, :],
+            color=line.get_color(),
+            alpha=0.25,
+        )
 
-        (line,) = ax1.loglog(resolutions, build_timings[1, :], "v-", color=next(color))
-        lines.append(line)
-        labels.append(r"Build $(\leftarrow)$")
-        # ax1.fill_between(
-        #     resolutions,
-        #     build_timings[1, :] - build_timings[2, :],
-        #     build_timings[1, :] + build_timings[2, :],
-        #     color=line.get_color(),
-        #     alpha=0.25,
-        # )
-
-        ax2 = ax1.twinx()
-        (line,) = ax2.loglog(resolutions, solve_timings[1, :], "^-", color=next(color))
-        lines.append(line)
-        labels.append(r"Solve $(\rightarrow)$")
-        # ax2.fill_between(
-        #     resolutions,
-        #     solve_timings[1, :] - solve_timings[2, :],
-        #     solve_timings[1, :] + solve_timings[2, :],
-        #     color=line.get_color(),
-        #     alpha=0.25,
-        # )
+        (line,) = ax.loglog(resolutions, solve_timings[1, :], "^-", label=r"Solve")
+        ax.fill_between(
+            resolutions,
+            solve_timings[1, :] - solve_timings[2, :],
+            solve_timings[1, :] + solve_timings[2, :],
+            color=line.get_color(),
+            alpha=0.25,
+        )
 
         # }}}
 
         # {{{ plot expected scaling
 
-        order = 1 if ambient_dim == 2 else 1.5
         # compute polynomial order line
-        ymax = np.max(build_timings[1, :])
-        ymin = np.min(build_timings[1, :])
-        xmax = resolutions[-1]
-        xmin = np.exp(np.log(xmax) + np.log(ymin / ymax) / order)
-        log.info("O(n^p):     [%g, %g] x [%g, %g]", xmin, xmax, ymin, ymax)
-
-        (line,) = ax1.loglog([xmin, xmax], [ymin, ymax], "k--")
-        lines.append(line)
-        labels.append("$O(n)$" if ambient_dim == 2 else "$O(n^{1.5})$")
-
-        if ambient_dim == 3:
-            from scipy.special import lambertw
-
-            # compute n log n order line
-            ymax = np.max(solve_timings[1, :])
-            ymin = np.min(solve_timings[1, :])
-            xmax = resolutions[-1]
-            k = xmax * np.log(xmax) / (ymax / ymin)
-            xmin = np.real(k / lambertw(k))
-            log.info("O(n log n): [%g, %g] x [%g, %g]", xmin, xmax, ymin, ymax)
-
-            (line,) = ax2.loglog([xmin, xmax], [ymin, ymax], "k:")
-            lines.append(line)
-            labels.append(r"$O(n \log n)$")
+        x = resolutions
+        if ambient_dim == 2:
+            ds.loglog_scaling_line(ax, x, build_timings[1, :], order=1, linestyle="--")
+            ds.loglog_scaling_line(ax, x, solve_timings[1, :], order=1, linestyle=":")
+        elif ambient_dim == 3:
+            ds.loglog_scaling_line(
+                ax, x, build_timings[1, :], order=1.5, linestyle="--"
+            )
+            ds.loglog_scaling_line(
+                ax, x, solve_timings[1, :], order=(1, 1), linestyle=":"
+            )
+        else:
+            raise ValueError(f"unsupported dimension: {ambient_dim}")
 
         # }}}
 
-        ax1.set_xlabel("$n$")
-        ax1.set_ylabel("Build time (s)")
+        ax.set_xticks(resolutions)
+        ax.set_xticklabels(resolutions)
+        ax.tick_params(axis="both", which="major", labelsize=16)
 
-        fmt = ticker.FuncFormatter(lambda x, _: f"{x:.1f}")
-        ax1.yaxis.set_minor_formatter(fmt)
-        ax1.yaxis.set_major_formatter(fmt)
-        ax1.legend(lines, labels)
-
-        ax2.set_ylabel("Solve time (s)", rotation=-90, labelpad=25)
-        fmt = ticker.FuncFormatter(lambda x, _: f"{x:.2f}")
-        ax2.yaxis.set_minor_formatter(fmt)
-        ax2.yaxis.set_major_formatter(fmt)
+        ax.set_ylabel("Time (s)")
+        ax.set_xlabel("$n$")
+        ax.legend(loc="upper left", frameon=True, ncol=2)
 
     return 0
 

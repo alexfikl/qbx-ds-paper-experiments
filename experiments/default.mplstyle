@@ -16,6 +16,9 @@ axes.grid: True
 axes.grid.axis: both
 axes.grid.which: both
 
+lines.linewidth: 2
+lines.markersize: 10
+
 # ticks
 xtick.labelsize: 20
 xtick.direction: inout
@@ -34,11 +37,14 @@ text.usetex: True
 font.family: serif
 text.latex.preamble: \usepackage{txfonts}
 
-# others
+# legend
 legend.fontsize: 20
-# legend.frameon: True
-lines.linewidth: 2
-lines.markersize: 10
+legend.frameon: True
+legend.fancybox: False
+legend.facecolor: white
+legend.edgecolor: black
+legend.framealpha: 1.0
+legend.columnspacing: 0.8
 
 # plot faster (fast.mplstyle)
 path.simplify: True

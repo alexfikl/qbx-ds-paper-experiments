@@ -8,7 +8,7 @@ import os
 import pathlib
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeAlias
 
 import matplotlib.pyplot as mp
 import numpy as np
@@ -248,6 +248,45 @@ def axis(
     finally:
         savefig(fig, pathlib.Path(filename), overwrite=overwrite)
         fig.clf()
+
+
+def loglog_scaling_line(
+    ax: mp.Axes,
+    x: Array,
+    y: Array,
+    *,
+    order: float | tuple[float, float] = 1,
+    label: str | Literal[False] | None = None,
+    linestyle: str = "--",
+) -> None:
+    if isinstance(order, (int, float)):
+        order = (float(order), 0)
+
+    p, q = order
+    if label is None:
+        nlabel = "" if p == 0 else ("n" if p == 1 else f"n^{{{p:.1f}}}")
+        lognlabel = "" if q == 0 else (r"\log n" if q == 1 else rf"\log^{{{q:.1f}}} n")
+        label = f"$O({nlabel}{lognlabel})$"
+    elif label is False:
+        label = None
+
+    if q == 0:
+        ymax = np.max(y)
+        ymin = y[0]
+        xmax = x[-1]
+        xmin = np.exp(np.log(xmax) + np.log(ymin / ymax) / p)
+        log.info("%s: [%g, %g] x [%g, %g]", label, xmin, xmax, ymin, ymax)
+    else:
+        from scipy.special import lambertw
+
+        ymax = np.max(y)
+        ymin = y[0]
+        xmax = x[-1]
+        k = xmax * np.log(xmax) / (ymax / ymin)
+        xmin = np.real(k / lambertw(k))
+        log.info("%s: [%g, %g] x [%g, %g]", label, xmin, xmax, ymin, ymax)
+
+    ax.loglog([xmin, xmax], [ymin, ymax], "k", linestyle=linestyle, label=label)
 
 
 # }}}
