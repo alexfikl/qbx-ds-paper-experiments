@@ -11,9 +11,11 @@ import subprocess
 import common_ds_tools as ds
 
 
+dirname = pathlib.Path(__file__).parent
+
 log = ds.set_up_logging("ds")
 RE_ARCHIVE_NAME = re.compile(
-    r"\d{4}-\d{2}-\d{2}-(?P<script>.*)-(?P<dim>\d)(?P<lpot>[ds])-?(?P<suffix>.*).npz"
+    r"(\d{4}-\d{2}-\d{2}-)?(?P<script>.*)-(?P<dim>\d)(?P<lpot>[ds])-?(?P<suffix>.*).npz"
 )
 
 
@@ -23,6 +25,7 @@ def visualize(
     *,
     overwrite: bool = False,
 ) -> int:
+    npz = pathlib.Path(npz)
     m = RE_ARCHIVE_NAME.match(npz.name)
     if not m:
         log.error("Filename did not match pattern: '%s'.", npz.name)
@@ -32,9 +35,9 @@ def visualize(
     lpot_type = m["lpot"]
     suffix = m["suffix"]
 
-    script = npz.parent / f"{m['script']}.py"
+    script = dirname / f"{m['script']}.py"
     if not script.exists():
-        log.error("Script does not exist: '%s'.", script.name)
+        log.error("Script does not exist: '%s'.", script)
         return 1
 
     log.info("Calling script '%s'.", script.name)
