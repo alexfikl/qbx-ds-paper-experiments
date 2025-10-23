@@ -29,7 +29,7 @@ ds.set_recommended_matplotlib()
 
 @dataclass(frozen=True)
 class ExperimentResult:
-    id_eps: float
+    h_max: float
     error: float
     parameters: ds.ExperimentParameters
 
@@ -39,6 +39,7 @@ def run(
     places: GeometryCollection,
     param: ds.ExperimentParameters,
     *,
+    use_fmm: bool = True,
     rng: np.random.Generator | None = None,
 ) -> ExperimentResult:
     if rng is None:
@@ -78,10 +79,24 @@ def run(
         sym_op = sym.S(
             knl, sym_u, qbx_forced_limit=-1, kernel_arguments=kernel_arguments
         )
+        sym_repr = sym.S(
+            # FIXME: qbx_forced_limit needs to be None for "non-self evaluation"
+            knl,
+            sym_u,
+            qbx_forced_limit=None,
+            kernel_arguments=kernel_arguments,
+        )
     elif param.lpot_type == "d":
         # NOTE: this is the interior problem
         sym_op = -sym_u / 2 + sym.D(
             knl, sym_u, qbx_forced_limit="avg", kernel_arguments=kernel_arguments
+        )
+        sym_repr = sym.D(
+            # FIXME: qbx_forced_limit needs to be None for "non-self evaluation"
+            knl,
+            sym_u,
+            qbx_forced_limit=None,
+            kernel_arguments=kernel_arguments,
         )
     else:
         raise ValueError(f"unknown layer potential type: '{param.lpot_type}'")
@@ -89,6 +104,7 @@ def run(
     sym_op_pot = sym.int_g_vec(
         knl,
         sym_u,
+        # FIXME: qbx_forced_limit needs to be None for "non-self evaluation"
         qbx_forced_limit=None,
         kernel_arguments=kernel_arguments,
     )
@@ -97,51 +113,82 @@ def run(
 
     # {{{ build reference solution
 
-    x_ref = ds.make_uniform_random_array(actx, density_discr, rng=rng)
+    point_sources = places.get_geometry("point_sources")
+    charges = ds.make_uniform_random_array(actx, point_sources, rng=rng)
 
     b_ref = bind(
         places,
         sym_op_pot,
         auto_where=("point_sources", dd),
-    )(actx, sigma=x_ref, **context)
+    )(actx, sigma=charges, **context)
+
+    x_ref = bind(
+        places,
+        sym_op_pot,
+        auto_where=("point_sources", "point_targets"),
+    )(actx, sigma=charges, **context)
 
     # }}}
 
     # {{{ solve using hmatrix
 
-    from pytential.linalg.hmatrix import build_hmatrix_by_proxy
-    from pytools import ProcessTimer
+    if use_fmm:
+        from pytential.linalg.gmres import gmres
 
-    with ProcessTimer() as p:
-        wrangler = build_hmatrix_by_proxy(
-            actx,
-            places,
-            sym_op,
-            sym_u,
-            domains=[dd],
-            context=context,
-            id_eps=param.id_eps,
-            rng=rng,
-            _max_particles_in_box=param.max_particles_in_box,
-            _approx_nproxy=param.proxy_approx_count,
-            _proxy_radius_factor=param.proxy_radius_factor,
+        scipy_op = bind(places, sym_op, auto_where=dd).scipy_op(
+            actx, "sigma", np.dtype(np.float64), **context
         )
-        hmat = wrangler.get_backward()
+        gmres_result = gmres(
+            scipy_op,
+            b_ref,
+            tol=param.id_eps,
+            progress=True,
+            hard_failure=True,
+            stall_iterations=50,
+            no_progress_factor=1.05,
+        )
+        x_hmat = gmres_result.solution
+    else:
+        from pytential.linalg.hmatrix import build_hmatrix_by_proxy
+        from pytools import ProcessTimer
 
-    log.info("[construction] time: %s", p)
+        with ProcessTimer() as p:
+            wrangler = build_hmatrix_by_proxy(
+                actx,
+                places,
+                sym_op,
+                sym_u,
+                domains=[dd],
+                context=context,
+                id_eps=param.id_eps,
+                rng=rng,
+                _max_particles_in_box=param.max_particles_in_box,
+                _approx_nproxy=param.proxy_approx_count,
+                _proxy_radius_factor=param.proxy_radius_factor,
+            )
+            hmat = wrangler.get_backward()
 
-    from meshmode.dof_array import flat_norm
+        log.info("[construction] time: %s", p)
 
-    with ProcessTimer() as p:
-        x_hmat = hmat @ b_ref
-        error = actx.to_numpy(flat_norm(x_hmat - x_ref) / flat_norm(x_ref))
+        with ProcessTimer() as p:
+            x_hmat = hmat @ b_ref
 
-    log.info("[solve] time: %s", p)
+        log.info("[solve] time: %s", p)
+
+    h_max = bind(places, sym.h_max(places.ambient_dim))(actx)
+    x_hmat = bind(
+        places,
+        sym_repr,
+        auto_where=(dd, "point_targets"),
+    )(actx, sigma=x_hmat, **context)
+    error = actx.to_numpy(
+        actx.np.linalg.norm(x_hmat - x_ref) / actx.np.linalg.norm(x_ref)
+    )
 
     # }}}
 
     return ExperimentResult(
-        id_eps=param.id_eps,
+        h_max=actx.to_numpy(h_max),
         error=error,
         parameters=param,
     )
@@ -163,7 +210,7 @@ def experiment_run(
     **kwargs,
 ) -> int:
     actx = actx_factory()
-    eoc = ds.EOCRecorder("Accuracy", "id_eps")
+    eoc = ds.EOCRecorder("Accuracy", "h_max")
 
     from dataclasses import replace
 
@@ -177,37 +224,30 @@ def experiment_run(
     if not overwrite and filename.exists():
         raise FileExistsError(filename)
 
-    nruns = 3
-    id_eps = 10.0 ** (-np.arange(2, 16))
-    error = np.empty((nruns, id_eps.size), dtype=id_eps.dtype)
-    places = ds.make_geometry_collection(actx, param)
+    nruns = len(param.resolutions)
+    error = np.empty(nruns)
+    h_max = np.empty(nruns)
 
-    # NOTE: adding a few more proxy points just to be on the safe side
-    proxy_approx_count = param.get_model_proxy_count() + 64
-    assert id_eps.shape == proxy_approx_count.shape
-
-    for i in range(id_eps.size):
+    for i, resolution in enumerate(param.resolutions):
         # NOTE: ensure each set starts out the same
         rng = ds.seeded_rng(seed=42)
-        param_i = replace(
-            param,
-            id_eps=id_eps[i],
-            proxy_approx_count=proxy_approx_count[i],
+        param_i = replace(param, resolution=resolution)
+
+        places = ds.make_geometry_collection(actx, param_i)
+        result = run(actx, places, param_i, rng=rng)
+
+        h_max[i] = result.h_max
+        error[i] = result.error
+        eoc.add_data_point(result.h_max, result.error)
+        log.info(
+            "resolution %5d h_max %.2e error %.12e", resolution, h_max[i], error[i]
         )
-
-        # NOTE: run more times to get some nicer statistics
-        for irun in range(nruns):
-            result = run(actx, places, param_i, rng=rng)
-            error[irun, i] = result.error
-
-        eoc.add_data_point(id_eps[i], result.error)
-        log.info("id_eps %.2e error %.12e %.12e %.12e", id_eps[i], *error[:, i])
 
     log.info("\n%s", eoc)
 
     ds.savez(
         filename,
-        id_eps=id_eps,
+        h_max=h_max,
         error=error,
         param=result.parameters,
         overwrite=overwrite,
@@ -233,22 +273,22 @@ def experiment_visualize(
 
     basename = ds.strip_timestamp(path.with_suffix(""), strip=strip)
     data = np.load(filename, allow_pickle=True)
-    id_eps = data["id_eps"]
+    h_max = data["h_max"]
     errors = data["error"]
 
     ds.visualize_eoc(
         f"{basename}-convergence.{ext}",
         *[
             ds.EOCRecorder.from_array(
-                r"$E_{2, \mathrm{solution}}$",
-                id_eps,
+                r"$E_{2, \text{solution}}$",
+                h_max,
                 error,
-                abscissa=r"\epsilon_{\mathrm{id}}",
+                abscissa=r"h_{\text{max}}",
             )
             for error in errors
         ],
         order=1,
-        xlabel=r"$\epsilon_{\mathrm{id}}$",
+        xlabel=r"$\epsilon_{\text{id}}$",
         ylabel=r"Error",
         first_legend_only=True,
         keep_color=True,

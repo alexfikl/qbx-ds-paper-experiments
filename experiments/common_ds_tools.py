@@ -667,11 +667,24 @@ def make_uniform_random_array(
         rng = np.random.default_rng()
 
     from arraycontext import unflatten
+    from meshmode.discretization import Discretization
+    from pytential.source import PointPotentialSource
 
-    template = actx.thaw(discr.nodes()[0])
-    return unflatten(
-        template, actx.from_numpy(rng.uniform(-1.0, 1.0, size=discr.ndofs)), actx
-    )
+    if isinstance(discr, Discretization):
+        template = actx.thaw(discr.nodes()[0])
+        return unflatten(
+            template, actx.from_numpy(rng.uniform(-1.0, 1.0, size=discr.ndofs)), actx
+        )
+    elif isinstance(discr, PointPotentialSource):
+        # NOTE: these are going to be used as charges and we want them to have
+        # zero average charge so that all the operators work nicely.
+        result = rng.normal(size=discr.ndofs)
+        result[-1] = -np.sum(result[:-1])
+        assert np.sum(result) < 1.0e-15
+
+        return actx.from_numpy(result)
+    else:
+        raise TypeError(f"unknown geometry type: {type(discr)}")
 
 
 def make_circular_point_group(
@@ -714,10 +727,8 @@ def make_source_and_target_points(
 
     from pytential.source import PointPotentialSource
 
-    point_sources = make_circular_point_group(
-        ambient_dim, nsources, test_src_geo_radius
-    )
-    point_source = PointPotentialSource(actx.freeze(actx.from_numpy(point_sources)))
+    test_sources = make_circular_point_group(ambient_dim, nsources, test_src_geo_radius)
+    point_source = PointPotentialSource(actx.freeze(actx.from_numpy(test_sources)))
 
     from pytential.target import PointsTarget
 
