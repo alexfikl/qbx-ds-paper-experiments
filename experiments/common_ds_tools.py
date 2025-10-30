@@ -698,7 +698,7 @@ def make_circular_point_group(
     center = np.asarray(center)
 
     t = np.linspace(0.0, 1.0, npoints, endpoint=False)
-    t = 2.0 * np.pi * t**1.5
+    t = 2.0 * np.pi * t
 
     result = np.zeros((ambient_dim, npoints))
     result[:2, :] = center[:, None] + radius * np.vstack([np.cos(t), np.sin(t)])
@@ -713,8 +713,8 @@ def make_source_and_target_points(
     inner_radius: float,
     outer_radius: float,
     ambient_dim: int,
-    nsources: int = 10,
-    ntargets: int = 20,
+    nsources: int = 32,
+    ntargets: int = 128,
 ) -> tuple[PointsArray, PointsArray]:
     if side == -1:
         test_src_geo_radius = outer_radius
@@ -817,10 +817,6 @@ def make_geometry_collection(
         auto_where=dd,
     )
 
-    density_discr = places.get_discretization(dd.geometry, dd.discr_stage)
-    log.info("nelements:     %d", density_discr.mesh.nelements)
-    log.info("ndofs:         %d", density_discr.ndofs)
-
     return places
 
 
@@ -875,7 +871,7 @@ class ExperimentParameters2(ExperimentParameters):
 
     # NOTE: these are valid for the (arms, amplitude) above
     inner_radius: float = 0.25
-    outer_radius: float = 2.0
+    outer_radius: float = 3.0
 
     def make_mesh(self) -> Mesh:
         from meshmode.mesh.generation import NArmedStarfish, make_curve_mesh
@@ -901,6 +897,7 @@ class ExperimentParameters2(ExperimentParameters):
         # MAKE SURE TO UPDATE THESE IF ANY OF THE PARAMETERS CHANGE!!!
         if self.lpot_type == "s":
             return np.array([
+                # id_eps = 10^-2 all the way down to 10^-15
                 1,
                 1,
                 1,
