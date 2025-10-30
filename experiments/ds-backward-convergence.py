@@ -39,15 +39,22 @@ def run(
     places: GeometryCollection,
     param: ds.ExperimentParameters,
     *,
-    use_fmm: bool = True,
+    use_fmm: bool = False,
     rng: np.random.Generator | None = None,
 ) -> ExperimentResult:
     if rng is None:
         rng = ds.seeded_rng(seed=42)
 
+    from pytential import bind, sym
+
     # {{{ obtain discretization
 
     dd = places.auto_source
+    if use_fmm:
+        # FIXME: QBXLayerPotentialSource seems to force STAGE1 in some places,
+        # so if we want to do a square operator.. we need to do it on STAGE1
+        dd = dd.copy(discr_stage=sym.QBX_SOURCE_STAGE1)
+
     density_discr = places.get_discretization(dd.geometry, dd.discr_stage)
 
     log.info("nelements:     %d", density_discr.mesh.nelements)
@@ -57,8 +64,6 @@ def run(
 
     # {{{ construct symbolic operators
 
-    from pytential import bind, sym
-
     k = param.helmholtz_k
     if k == 0:
         from sumpy.kernel import LaplaceKernel
@@ -66,35 +71,27 @@ def run(
         knl = LaplaceKernel(places.ambient_dim)
         kernel_arguments = {}
         context = {}
+        dtype = np.dtype(np.float64)
     else:
         from sumpy.kernel import HelmholtzKernel
 
         knl = HelmholtzKernel(places.ambient_dim, helmholtz_k_name="k")
         kernel_arguments = {"k": sym.var("k")}
         context = {"k": k}
+        dtype = np.dtype(np.complex128)
 
-    sym_u = sym.var("sigma")
+    sym_sigma = sym.var("sigma")
+    side = -1
 
-    if param.lpot_type == "s":
-        sym_op = sym.S(
-            knl, sym_u, qbx_forced_limit=-1, kernel_arguments=kernel_arguments
-        )
-        sym_repr = sym.S(
-            # FIXME: qbx_forced_limit needs to be None for "non-self evaluation"
-            knl,
-            sym_u,
-            qbx_forced_limit=None,
-            kernel_arguments=kernel_arguments,
-        )
-    elif param.lpot_type == "d":
+    if param.lpot_type == "d":
         # NOTE: this is the interior problem
-        sym_op = -sym_u / 2 + sym.D(
-            knl, sym_u, qbx_forced_limit="avg", kernel_arguments=kernel_arguments
+        sym_op = side * sym_sigma / 2 + sym.D(
+            knl, sym_sigma, qbx_forced_limit="avg", kernel_arguments=kernel_arguments
         )
         sym_repr = sym.D(
             # FIXME: qbx_forced_limit needs to be None for "non-self evaluation"
             knl,
-            sym_u,
+            sym_sigma,
             qbx_forced_limit=None,
             kernel_arguments=kernel_arguments,
         )
@@ -103,7 +100,7 @@ def run(
 
     sym_op_pot = sym.int_g_vec(
         knl,
-        sym_u,
+        sym_sigma,
         # FIXME: qbx_forced_limit needs to be None for "non-self evaluation"
         qbx_forced_limit=None,
         kernel_arguments=kernel_arguments,
@@ -135,8 +132,8 @@ def run(
     if use_fmm:
         from pytential.linalg.gmres import gmres
 
-        scipy_op = bind(places, sym_op, auto_where=dd).scipy_op(
-            actx, "sigma", np.dtype(np.float64), **context
+        scipy_op = bind(places, sym_op, auto_where=(dd, dd)).scipy_op(
+            actx, "sigma", dtype, **context
         )
         gmres_result = gmres(
             scipy_op,
@@ -157,7 +154,7 @@ def run(
                 actx,
                 places,
                 sym_op,
-                sym_u,
+                sym_sigma,
                 domains=[dd],
                 context=context,
                 id_eps=param.id_eps,
@@ -175,7 +172,7 @@ def run(
 
         log.info("[solve] time: %s", p)
 
-    h_max = bind(places, sym.h_max(places.ambient_dim))(actx)
+    h_max = bind(places, sym.h_max(places.ambient_dim, dofdesc=dd))(actx)
     x_hmat = bind(
         places,
         sym_repr,
@@ -216,6 +213,21 @@ def experiment_run(
 
     ambient_dim = kwargs.pop("ambient_dim", 3)
     if ambient_dim == 2:
+        kwargs = {
+            # NOTE: QBX needs oversampling, but the direct solver does not work
+            # on QBX_SOURCE_STAGE2_QUAD, so we just oversample the base discr!
+            "mesh_order": 20,
+            "target_order": 20,
+            # NOTE: the default resolutions are too fine to see convergence
+            "resolutions": (256, 512, 768, 1024, 1024 + 256),
+            # NOTE: make sure we do a good job at the approximation
+            "starfish_arms": 8,
+            "id_eps": 1.0e-14,
+            "proxy_radius_factor": 1.5,
+            "max_particles_in_box": 192 * 2,
+            **kwargs,
+        }
+
         param = ds.ExperimentParameters2(**kwargs)
     else:
         param = ds.ExperimentParametersTorus3(**kwargs)
