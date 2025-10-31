@@ -60,6 +60,9 @@ def run(
     log.info("nelements:     %d", density_discr.mesh.nelements)
     log.info("ndofs:         %d", density_discr.ndofs)
 
+    h_max = bind(places, sym.h_max(places.ambient_dim, dofdesc=dd))(actx)
+    return ExperimentResult(h_max=actx.to_numpy(h_max), error=0.0, parameters=param)
+
     # }}}
 
     # {{{ construct symbolic operators
@@ -213,11 +216,6 @@ def experiment_run(
 
     ambient_dim = kwargs.pop("ambient_dim", 3)
     kwargs = {
-        # NOTE: QBX needs oversampling, but the direct solver does not work
-        # on QBX_SOURCE_STAGE2_QUAD, so we just oversample the base discr!
-        "mesh_order": 20,
-        "target_order": 20,
-        "source_ovsmp": 1,
         # NOTE: make sure we do a good job at the approximation
         "id_eps": 1.0e-14,
         **kwargs,
@@ -225,6 +223,11 @@ def experiment_run(
 
     if ambient_dim == 2:
         kwargs = {
+            # NOTE: QBX needs oversampling, but the direct solver does not work
+            # on QBX_SOURCE_STAGE2_QUAD, so we just oversample the base discr!
+            "mesh_order": 20,
+            "target_order": 20,
+            "source_ovsmp": 1,
             # NOTE: the default resolutions are too fine to see convergence
             "resolutions": (256, 512, 768, 1024, 1024 + 256),
             # NOTE: make sure we do a good job at the approximation
@@ -234,6 +237,18 @@ def experiment_run(
 
         param = ds.ExperimentParameters2(**kwargs)
     else:
+        kwargs = {
+            # NOTE: QBX needs oversampling, but the direct solver does not work
+            # on QBX_SOURCE_STAGE2_QUAD, so we just oversample the base discr!
+            "mesh_order": 16,
+            "target_order": 16,
+            "source_ovsmp": 1,
+            # NOTE: the default resolutions are too fine to see convergence
+            # NOTE: this weird order ensures decreasing h_max
+            "resolutions": ((10, 10), (10, 5), (15, 10), (20, 15), (25, 20)),
+            **kwargs,
+        }
+
         param = ds.ExperimentParametersTorus3(**kwargs)
 
     filename = ds.make_archive(scriptname, param, suffix=suffix)
@@ -248,6 +263,11 @@ def experiment_run(
         # NOTE: ensure each set starts out the same
         rng = ds.seeded_rng(seed=42)
         param_i = replace(param, resolution=resolution)
+        if isinstance(resolution, int):
+            resolution_s = f"{resolution:5d}"
+        else:
+            resolution_s = ", ".join(f"{r:3d}" for r in resolution)
+            resolution_s = f"({resolution_s})"
 
         places = ds.make_geometry_collection(actx, param_i)
         result = run(actx, places, param_i, rng=rng)
@@ -256,7 +276,7 @@ def experiment_run(
         error[i] = result.error
         eoc.add_data_point(result.h_max, result.error)
         log.info(
-            "resolution %5d h_max %.2e error %.12e", resolution, h_max[i], error[i]
+            "resolution %s h_max %.2e error %.12e", resolution_s, h_max[i], error[i]
         )
 
     log.info("\n%s", eoc)
