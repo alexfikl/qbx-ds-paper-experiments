@@ -60,8 +60,8 @@ def run(
     log.info("nelements:     %d", density_discr.mesh.nelements)
     log.info("ndofs:         %d", density_discr.ndofs)
 
-    h_max = bind(places, sym.h_max(places.ambient_dim, dofdesc=dd))(actx)
-    return ExperimentResult(h_max=actx.to_numpy(h_max), error=0.0, parameters=param)
+    # h_max = bind(places, sym.h_max(places.ambient_dim, dofdesc=dd))(actx)
+    # return ExperimentResult(h_max=actx.to_numpy(h_max), error=0.0, parameters=param)
 
     # }}}
 
