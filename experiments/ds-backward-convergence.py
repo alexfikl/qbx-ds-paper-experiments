@@ -55,11 +55,6 @@ def run(
         # so if we want to do a square operator.. we need to do it on STAGE1
         dd = dd.copy(discr_stage=sym.QBX_SOURCE_STAGE1)
 
-    density_discr = places.get_discretization(dd.geometry, dd.discr_stage)
-
-    log.info("nelements:     %d", density_discr.mesh.nelements)
-    log.info("ndofs:         %d", density_discr.ndofs)
-
     # h_max = bind(places, sym.h_max(places.ambient_dim, dofdesc=dd))(actx)
     # return ExperimentResult(h_max=actx.to_numpy(h_max), error=0.0, parameters=param)
 

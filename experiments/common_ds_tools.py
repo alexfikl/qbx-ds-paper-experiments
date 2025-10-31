@@ -817,6 +817,20 @@ def make_geometry_collection(
         auto_where=dd,
     )
 
+    ddo = dd.to_stage1()
+    density_discr = places.get_discretization(ddo.geometry, ddo.discr_stage)
+
+    log.info("stage:         %s", ddo.discr_stage.__name__)
+    log.info("nelements:     %d", density_discr.mesh.nelements)
+    log.info("ndofs:         %d", density_discr.ndofs)
+
+    ddo = dd.to_stage2()
+    density_discr = places.get_discretization(ddo.geometry, ddo.discr_stage)
+
+    log.info("stage:         %s", ddo.discr_stage.__name__)
+    log.info("nelements:     %d", density_discr.mesh.nelements)
+    log.info("ndofs:         %d", density_discr.ndofs)
+
     return places
 
 

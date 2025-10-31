@@ -48,13 +48,10 @@ def run(
     if rng is None:
         rng = ds.seeded_rng(seed=42)
 
-    # {{{ construct discretization
+    # {{{ retrieve discretization
 
     dd = places.auto_source
     density_discr = places.get_discretization(dd.geometry, dd.discr_stage)
-
-    log.info("nelements:     %d", density_discr.mesh.nelements)
-    log.info("ndofs:         %d", density_discr.ndofs)
 
     # }}}
 
