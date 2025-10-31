@@ -212,19 +212,22 @@ def experiment_run(
     from dataclasses import replace
 
     ambient_dim = kwargs.pop("ambient_dim", 3)
+    kwargs = {
+        # NOTE: QBX needs oversampling, but the direct solver does not work
+        # on QBX_SOURCE_STAGE2_QUAD, so we just oversample the base discr!
+        "mesh_order": 20,
+        "target_order": 20,
+        # NOTE: make sure we do a good job at the approximation
+        "id_eps": 1.0e-14,
+        **kwargs,
+    }
+
     if ambient_dim == 2:
         kwargs = {
-            # NOTE: QBX needs oversampling, but the direct solver does not work
-            # on QBX_SOURCE_STAGE2_QUAD, so we just oversample the base discr!
-            "mesh_order": 20,
-            "target_order": 20,
             # NOTE: the default resolutions are too fine to see convergence
             "resolutions": (256, 512, 768, 1024, 1024 + 256),
             # NOTE: make sure we do a good job at the approximation
             "starfish_arms": 8,
-            "id_eps": 1.0e-14,
-            "proxy_radius_factor": 1.5,
-            "max_particles_in_box": 192 * 2,
             **kwargs,
         }
 

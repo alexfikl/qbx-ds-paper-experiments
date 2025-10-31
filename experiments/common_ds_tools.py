@@ -958,8 +958,9 @@ class ExperimentParametersTorus3(ExperimentParameters):
     torus_radius_outer: float = 10.0
     torus_radius_inner: float = 2.0
 
+    # NOTE: these are valid for the (radius_outer, radius_inner) above
     inner_radius: float = 10.0
-    outer_radius: float = 14.0
+    outer_radius: float = 15.0
 
     def make_mesh(self) -> Mesh:
         from meshmode.mesh.generation import generate_torus
