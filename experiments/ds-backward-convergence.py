@@ -305,25 +305,21 @@ def experiment_visualize(
     basename = ds.strip_timestamp(path.with_suffix(""), strip=strip)
     data = np.load(filename, allow_pickle=True)
     h_max = data["h_max"]
-    errors = data["error"]
+    error = data["error"]
+    param = data["param"][()]
 
     ds.visualize_eoc(
         f"{basename}-convergence.{ext}",
-        *[
-            ds.EOCRecorder.from_array(
-                r"$E_{2, \text{solution}}$",
-                h_max,
-                error,
-                abscissa=r"h_{\text{max}}",
-            )
-            for error in errors
-        ],
-        order=1,
-        xlabel=r"$\epsilon_{\text{id}}$",
-        ylabel=r"Error",
-        first_legend_only=True,
-        keep_color=True,
-        align_order_to_abscissa=True,
+        ds.EOCRecorder.from_array(
+            r"$E_{2, \mathrm{solution}}$",
+            h_max,
+            error,
+            abscissa=r"$h_{\mathrm{max}}$",
+        ),
+        order=param["qbx_order"] + 1,
+        xlabel=r"$h_{\mathrm{max}}$",
+        ylabel="Error",
+        align_order_to_abscissa=False,
         overwrite=overwrite,
     )
 
