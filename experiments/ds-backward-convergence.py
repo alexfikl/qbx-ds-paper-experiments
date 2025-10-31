@@ -217,6 +217,7 @@ def experiment_run(
         # on QBX_SOURCE_STAGE2_QUAD, so we just oversample the base discr!
         "mesh_order": 20,
         "target_order": 20,
+        "source_ovsmp": 1,
         # NOTE: make sure we do a good job at the approximation
         "id_eps": 1.0e-14,
         **kwargs,
