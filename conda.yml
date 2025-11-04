@@ -3,6 +3,7 @@ channels:
 - conda-forge
 - nodefaults
 dependencies:
+- blas=*=openblas
 - colorama
 - compilers
 - cython
@@ -19,9 +20,9 @@ dependencies:
 - pyrsistent
 - pytest
 - python-symengine
-- python=3.10
+- python=3.13
 - pytools
 - pyvkfft
 - recursivenodes
-- scipy
+- scipy=1.14.1
 - sympy

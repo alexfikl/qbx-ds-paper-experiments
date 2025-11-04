@@ -31,7 +31,9 @@ dependencies = [
     "numpy",
     "pyvkfft",
     "rich",
-    "scipy",
+    # NOTE: this is the last version that uses the FORTRAN code for the
+    # `interp_decom`, which is a lot faster unfortunately.
+    "scipy<=1.14.1",
     "sympy",
 ]
 
