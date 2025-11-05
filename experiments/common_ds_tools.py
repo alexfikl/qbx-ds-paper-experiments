@@ -903,7 +903,7 @@ class ExperimentParameters2(ExperimentParameters):
 
         keyb = KeyBuilder()
         param_hash = keyb(self)
-        if param_hash not in {"1e24ef0cda3d738a", "1cb070a9892ae75f"}:
+        if param_hash not in {"5b42020ee59f7b2d", "057ad9f70d93cb91"}:
             raise RuntimeError(f"These parameters do not match: {param_hash}")
 
         # NOTE: these are obtained by running `ds-forward-model` and fitting
@@ -1005,7 +1005,7 @@ class ExperimentParametersTorus3(ExperimentParameters):
 
         keyb = KeyBuilder()
         param_hash = keyb(self)
-        if param_hash not in {"dbac5395a11117a3", "7b73797f949ae77c"}:
+        if param_hash not in {"00bd084bdccf3787", "505b431264efa595"}:
             raise RuntimeError(f"These parameters do not match: {param_hash}")
 
         # NOTE: MAKE SURE TO UPDATE THESE IF ANY OF THE PARAMETERS CHANGE!!!
