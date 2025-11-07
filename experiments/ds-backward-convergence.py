@@ -239,12 +239,11 @@ def experiment_run(
             "target_order": 16,
             "source_ovsmp": 1,
             # NOTE: the default resolutions are too fine to see convergence
-            # NOTE: this weird order ensures decreasing h_max
-            "resolutions": ((10, 10), (10, 5), (15, 10), (20, 15), (25, 20)),
+            "resolutions": (0, 1, 2),
             **kwargs,
         }
 
-        param = ds.ExperimentParametersTorus3(**kwargs)
+        param = ds.ExperimentParametersIcosphere3(**kwargs)
 
     filename = ds.make_archive(scriptname, param, suffix=suffix)
     if not overwrite and filename.exists():
@@ -253,25 +252,29 @@ def experiment_run(
     nruns = len(param.resolutions)
     error = np.empty(nruns)
     h_max = np.empty(nruns)
+    # error = np.array([2.894444502629e-04, 2.321062504596e-04,
+    #                   8.672692654958e-04, 3.668389449853e-04])
+    # h_max = np.array([6.84e+00, 6.28e+00, 5.85e+00, 4.38e+00])
 
     for i, resolution in enumerate(param.resolutions):
         # NOTE: ensure each set starts out the same
         rng = ds.seeded_rng(seed=42)
         param_i = replace(param, resolution=resolution)
-        if isinstance(resolution, int):
-            resolution_s = f"{resolution:5d}"
-        else:
-            resolution_s = ", ".join(f"{r:3d}" for r in resolution)
-            resolution_s = f"({resolution_s})"
 
         places = ds.make_geometry_collection(actx, param_i)
         result = run(actx, places, param_i, rng=rng)
 
         h_max[i] = result.h_max
         error[i] = result.error
-        eoc.add_data_point(result.h_max, result.error)
+        eoc.add_data_point(h_max[i], error[i])
+
+        if isinstance(resolution, tuple):
+            resolution_s = ", ".join(f"{r:3d}" for r in resolution)
+        else:
+            resolution_s = f"{resolution:7}"
+
         log.info(
-            "resolution %s h_max %.2e error %.12e", resolution_s, h_max[i], error[i]
+            "resolution (%s) h_max %.2e error %.12e", resolution_s, h_max[i], error[i]
         )
 
     log.info("\n%s", eoc)
@@ -280,7 +283,7 @@ def experiment_run(
         filename,
         h_max=h_max,
         error=error,
-        param=result.parameters,
+        param=param,
         overwrite=overwrite,
     )
 

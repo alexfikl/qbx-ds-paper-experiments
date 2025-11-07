@@ -771,12 +771,20 @@ def make_geometry_collection(
     import meshmode.discretization.poly_element as mpoly
     from meshmode.discretization import Discretization
 
-    if force_equidistant:
-        factory = mpoly.InterpolatoryEquidistantGroupFactory(param.target_order)
-    else:
-        factory = mpoly.InterpolatoryQuadratureSimplexGroupFactory(param.target_order)
-
     mesh = param.make_mesh()
+    if param.is_tensor_product:
+        if force_equidistant:
+            factory = mpoly.EquidistantTensorProductGroupFactory(param.target_order)
+        else:
+            factory = mpoly.GaussLegendreTensorProductGroupFactory(param.target_order)
+    else:
+        if force_equidistant:
+            factory = mpoly.InterpolatoryEquidistantGroupFactory(param.target_order)
+        else:
+            factory = mpoly.InterpolatoryQuadratureSimplexGroupFactory(
+                param.target_order
+            )
+
     pre_density_discr = Discretization(actx, mesh, factory)
 
     from pytential.qbx import QBXLayerPotentialSource
@@ -794,6 +802,7 @@ def make_geometry_collection(
         fine_order=param.fine_order,
         qbx_order=param.qbx_order,
         fmm_order=False,
+        _disable_refinement=True,
     )
 
     sources, targets = make_source_and_target_points(
@@ -857,6 +866,10 @@ class ExperimentParameters(GeometryParameters):
     proxy_remove_source_transforms: bool = False
 
     max_particles_in_box: int = 128
+
+    @property
+    def is_tensor_product(self) -> bool:
+        return False
 
     def make_mesh(self) -> Mesh:
         raise NotImplementedError
@@ -1089,6 +1102,45 @@ class ExperimentParametersSphere3(ExperimentParameters):
         )
 
         return mesh
+
+    def get_model_proxy_count(self) -> IndexArray:
+        raise NotImplementedError
+
+
+@dataclass(frozen=True, eq=True)
+class ExperimentParametersIcosphere3(ExperimentParameters):
+    ambient_dim: int = 3
+
+    # NOTE: resolution = gmsh spacing
+    resolution: int = 0.25
+    resolutions: tuple[float, ...] = field(default_factory=lambda: (0, 1, 2, 3))
+
+    # NOTE: this will be approximated by the error model?
+    proxy_approx_count: int = 128 + 128
+    # NOTE: this is hard to get right using the tree from boxtree, i.e. box
+    # sizes can vary quite a bit based on geometry; this looks nice enough.
+    max_particles_in_box: int = 512 + 256
+
+    sphere_radius: float = 1.5
+
+    # NOTE: these are valid for the radius above
+    inner_radius: float = 0.5
+    outer_radius: float = 3.0
+
+    @property
+    def is_tensor_product(self) -> bool:
+        return True
+
+    def make_mesh(self) -> Mesh:
+        from meshmode.mesh import TensorProductElementGroup
+        from meshmode.mesh.generation import generate_sphere
+
+        return generate_sphere(
+            self.sphere_radius,
+            order=self.mesh_order,
+            uniform_refinement_rounds=self.resolution,
+            group_cls=TensorProductElementGroup,
+        )
 
     def get_model_proxy_count(self) -> IndexArray:
         raise NotImplementedError
