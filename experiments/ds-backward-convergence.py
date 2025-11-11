@@ -309,7 +309,6 @@ def experiment_visualize(
     data = np.load(filename, allow_pickle=True)
     h_max = data["h_max"]
     error = data["error"]
-    param = data["param"][()]
 
     ds.visualize_eoc(
         f"{basename}-convergence.{ext}",
