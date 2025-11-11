@@ -1129,17 +1129,17 @@ class ExperimentParametersIcosphere3(ExperimentParameters):
 
     @property
     def is_tensor_product(self) -> bool:
-        return True
+        return False
 
     def make_mesh(self) -> Mesh:
-        from meshmode.mesh import TensorProductElementGroup
+        # from meshmode.mesh import TensorProductElementGroup
         from meshmode.mesh.generation import generate_sphere
 
         return generate_sphere(
             self.sphere_radius,
             order=self.mesh_order,
             uniform_refinement_rounds=self.resolution,
-            group_cls=TensorProductElementGroup,
+            # group_cls=TensorProductElementGroup,
         )
 
     def get_model_proxy_count(self) -> IndexArray:

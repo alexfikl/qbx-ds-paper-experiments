@@ -319,7 +319,7 @@ def experiment_visualize(
             error,
             abscissa=r"$h_{\mathrm{max}}$",
         ),
-        order=param["qbx_order"] + 1,
+        order=4,
         xlabel=r"$h_{\mathrm{max}}$",
         ylabel="Error",
         align_order_to_abscissa=False,
