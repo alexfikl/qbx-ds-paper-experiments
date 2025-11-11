@@ -36,7 +36,7 @@ contourpy==1.3.3 ; python_full_version >= '3.11'
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
-cython==3.1.6
+cython==3.2.0
     # via qbx-ds-experiments (pyproject.toml)
 fonttools==4.60.1
     # via matplotlib
@@ -54,7 +54,7 @@ islpy==2025.2.5
     # via loopy
 kiwisolver==1.4.9
     # via matplotlib
-loopy @ git+https://github.com/inducer/loopy.git@dfa3d7a3b11539d818a1c63e419f5c99cb23a83b#egg=loopy
+loopy @ git+https://github.com/inducer/loopy.git@d6325a8957c7d06f7b4aa00bdad6efda2e1311f2#egg=loopy
     # via
     #   qbx-ds-experiments (pyproject.toml)
     #   meshmode
@@ -75,11 +75,11 @@ matplotlib==3.10.7
     #   scienceplots
 mdurl==0.1.2
     # via markdown-it-py
-meshmode @ git+https://github.com/inducer/meshmode.git@0c0cda9ced2b3b9dd29fdbce4bed3bededf4026c#egg=meshmode
+meshmode @ git+https://github.com/inducer/meshmode.git@57a1577a19d0ced2b2bde146e5988ae4f998b48d#egg=meshmode
     # via
     #   qbx-ds-experiments (pyproject.toml)
     #   pytential
-modepy @ git+https://github.com/inducer/modepy.git@5ee5aa0316f1a753ed2273625ef1eefbf5c5225e#egg=modepy
+modepy @ git+https://github.com/inducer/modepy.git@5c92f2931b7237632787142dd9886df4e72ee37a#egg=modepy
     # via
     #   qbx-ds-experiments (pyproject.toml)
     #   meshmode
@@ -119,7 +119,7 @@ psutil==7.1.3
     # via pyvkfft
 pygments==2.19.2
     # via rich
-pymbolic @ git+https://github.com/inducer/pymbolic.git@8bafbefc3850ac76f0368e8e249577165106c1c8#egg=pymbolic
+pymbolic @ git+https://github.com/inducer/pymbolic.git@b0fc8e556ac6df7f97ec0fb009fa0f274037c691#egg=pymbolic
     # via
     #   qbx-ds-experiments (pyproject.toml)
     #   boxtree
@@ -136,11 +136,11 @@ pyopencl==2025.2.7
     #   sumpy
 pyparsing==3.2.5
     # via matplotlib
-pytential @ git+https://github.com/alexfikl/pytential.git@fd3ee62aa2a0c9442b8d5cb7fa2ecaac64e448ad#egg=pytential
+pytential @ git+https://github.com/alexfikl/pytential.git@6a6db24de60c1febc63d0602e6080df7587726ec#egg=pytential
     # via qbx-ds-experiments (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via matplotlib
-pytools @ git+https://github.com/inducer/pytools.git@7726dee47cfd04c2f4ceb825aa55e3382597dd92#egg=pytools
+pytools @ git+https://github.com/inducer/pytools.git@8736a56b2485323134451333d0aa6df5da69a499#egg=pytools
     # via
     #   qbx-ds-experiments (pyproject.toml)
     #   arraycontext
