@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "A Fast Direct Solver for Boundary Integral Equations Using Quadrature by Expansion"
+authors:
+  - family-names: Fikl
+    given-names: Alexandru
+    email: alexfikl@gmail.com
+license: MIT
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.15487041
+    description: "Zenodo repository"
+repository-code: "https://github.com/alexfikl/2018-qbx-ds-paper-experiments"
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Fikl
+      given-names: Alexandru
+    - family-names: Klöckner
+      given-names: Andreas
+  title: "A Fast Direct Solver for Boundary Integral Equations Using Quadrature by Expansion"
+  journal: "Journal of Scientific Computing"
+  volume: 106
+  number: 2
+  year: 2026
+  doi: 10.1007/s10915-025-03174-8
+  publisher:
+    name: "Springer Science and Business Media LLC"

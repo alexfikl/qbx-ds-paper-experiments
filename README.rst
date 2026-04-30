@@ -1,5 +1,5 @@
-Introduction
-------------
+A Fast Direct Solver for Boundary Integral Equations Using Quadrature by Expansion
+----------------------------------------------------------------------------------
 
 .. |badge-license| image:: https://img.shields.io/badge/License-MIT-blue.svg
     :target: https://spdx.org/licenses/MIT.html
@@ -12,7 +12,8 @@ Introduction
 |badge-license| |badge-zenodo|
 
 This contains a Docker image and some scripts that are used to generate the
-results from the paper in a reproducible manner.
+results from the `paper <https://doi.org/10.1007/s10915-025-03174-8>`__ in a
+reproducible manner.
 
 Building Docker Image
 ---------------------
@@ -69,3 +70,19 @@ To update the versions to the latest ones, you can use
 .. code:: bash
 
     make -B pin
+
+Citation
+--------
+
+.. code:: bibtex
+
+    @article{Fikl_Kloeckner_QBX_Direct_Solver_2026,
+        author = { Alexandru Fikl and Andreas Klöckner },
+        doi = { 10.1007/s10915-025-03174-8 },
+        journal = { Journal of Scientific Computing },
+        number = { 2 },
+        publisher = { Springer Science and Business Media {LLC} },
+        title = { A Fast Direct Solver for Boundary Integral Equations Using Quadrature by Expansion },
+        volume = { 106 },
+        year = { 2026 }
+    }
