@@ -71,7 +71,12 @@ def seeded_rng(seed: int = 42) -> np.random.Generator:
     import scipy.linalg.interpolative as sli
 
     # NOTE: also set global seeds in case any other randomness is lurking around
-    sli.seed(seed)
+    try:  # noqa: SIM105
+        # NOTE: sli.seed was removed in scipy 1.17.0
+        sli.seed(seed)
+    except AttributeError:
+        pass
+
     np.random.seed(seed)  # noqa: NPY002
 
     return np.random.default_rng(seed=seed)
@@ -309,7 +314,7 @@ def estimate_order_of_convergence(x: RealArray, y: RealArray) -> tuple[float, fl
     if x.size <= 1:
         raise RuntimeError("Need at least two values to estimate order.")
 
-    eps = np.finfo(x.dtype).eps
+    eps = np.finfo(x.dtype).eps  # pylint: disable=no-member
     c = np.polyfit(np.log10(x + eps), np.log10(y + eps), 1)
     return float(10 ** c[-1]), float(c[-2])
 
@@ -1441,7 +1446,7 @@ def em_constant_correction(
     if opt:
         import scipy.optimize as so
 
-        tol = 2 * np.finfo(1.0).eps
+        tol = 2 * np.finfo(1.0).eps  # pylint: disable=no-member
         result = so.least_squares(
             f,
             np.array([1.0, 1.0]),
@@ -1531,7 +1536,7 @@ def em_constant_fit(
 
     import scipy.optimize as so
 
-    tol = 2 * np.finfo(dtype).eps
+    tol = 2 * np.finfo(dtype).eps  # pylint: disable=no-member
     xmin = 100 * tol
     min_distance = np.inf
     x = np.array([xmin, xmin])

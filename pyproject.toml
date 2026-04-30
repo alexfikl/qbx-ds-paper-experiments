@@ -59,7 +59,7 @@ optional-dependencies.visualization = [
 [tool.ruff]
 preview = true
 
-lint.extend-select = [
+lint.select = [
     "B",   # flake8-bugbear
     "C",   # flake8-comprehensions
     "E",   # pycodestyle
