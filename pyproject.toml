@@ -77,16 +77,16 @@ lint.select = [
 ]
 lint.extend-ignore = [
     "C90",   # McCabe complexity
-    "E226",  # missing whitespace around arithmetic operator
-    "E241",  # multiple spaces after comma
-    "E242",  # tab after comma
-    "E265",  # comment should have a space
-    "E402",  # module level import not at the top of file
-    "N803",  # argument should be lower case
-    "N806",  # variable should be lower case
-    "UP032", # use f-strings instead of .format
+    "missing-whitespace-around-arithmetic-operator",  # missing whitespace around arithmetic operator
+    "multiple-spaces-after-comma",  # multiple spaces after comma
+    "tab-after-comma",  # tab after comma
+    "no-space-after-block-comment",  # comment should have a space
+    "module-import-not-at-top-of-file",  # module level import not at the top of file
+    "invalid-argument-name",  # argument should be lower case
+    "non-lowercase-variable-in-function",  # variable should be lower case
+    "f-string", # use f-strings instead of .format
 ]
-lint.per-file-ignores."*.ipynb" = [ "I002" ]
+lint.per-file-ignores."*.ipynb" = [ "missing-required-import" ]
 lint.flake8-quotes.docstring-quotes = "double"
 lint.flake8-quotes.inline-quotes = "double"
 lint.flake8-quotes.multiline-quotes = "double"

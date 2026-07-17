@@ -71,13 +71,13 @@ def seeded_rng(seed: int = 42) -> np.random.Generator:
     import scipy.linalg.interpolative as sli
 
     # NOTE: also set global seeds in case any other randomness is lurking around
-    try:  # noqa: SIM105
+    try:  # ruff:ignore[suppressible-exception]
         # NOTE: sli.seed was removed in scipy 1.17.0
         sli.seed(seed)
     except AttributeError:
         pass
 
-    np.random.seed(seed)  # noqa: NPY002
+    np.random.seed(seed)  # ruff:ignore[numpy-legacy-random]
 
     return np.random.default_rng(seed=seed)
 
@@ -214,7 +214,7 @@ def strip_timestamp(filename: pathlib.Path, *, strip: bool = True) -> pathlib.Pa
 
 def set_recommended_matplotlib() -> None:
     # NOTE: since v1.1.0 an import is required to import the styles
-    import scienceplots  # noqa: F401
+    import scienceplots  # ruff:ignore[unused-import]
 
     dirname = pathlib.Path(__file__).parent
     mp.style.use(["science", "ieee"])
