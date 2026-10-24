@@ -17,7 +17,7 @@ import numpy.linalg as la
 
 if TYPE_CHECKING:
     import argparse
-    from collections.abc import Callable, Iterator, Sequence
+    from collections.abc import Callable, Generator, Sequence
 
     from arraycontext import PyOpenCLArrayContext
     from meshmode.discretization import Discretization
@@ -243,7 +243,7 @@ def axis(
     filename: PathLike,
     *,
     overwrite: bool = False,
-) -> Iterator[Any]:
+) -> Generator[Any]:
     filename = pathlib.Path(filename)
     if not overwrite and filename.exists():
         raise FileExistsError(filename)
@@ -616,7 +616,7 @@ def profileit(
     outfile: PathLike | None = None,
     *,
     overwrite: bool = False,
-) -> Iterator[None]:
+) -> Generator[None]:
     if outfile is not None:
         outfile = pathlib.Path(outfile)
         if not overwrite and outfile.exists():
